@@ -21,6 +21,12 @@ func trackDyingTunnels() {
 	time.AfterFunc(5 * time.Second, func() {
 		for k, t := range tunnels {
 			if t.IsDead {
+				if t.toHostCtx != nil {
+					t.toHostCtx.BadRequest("Timeout")
+				}
+				if t.toClientCtx != nil {
+					t.toClientCtx.BadRequest("Timeout")
+				}
 				delete(tunnels, k)
 			}
 		}
