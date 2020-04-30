@@ -50,7 +50,7 @@ func wrapTunnel(handler TunnelParamHandler) gin.HandlerFunc {
 }
 
 func makeApi(api *gin.RouterGroup) {
-	api.POST("/apply_token", gw.Rest(func(c *gw.Context) {
+	api.POST("/apply-token", gw.Rest(func(c *gw.Context) {
 		tunnel := NewTunnel(time.Second * 5)
 		tunnels[tunnel.ID] = tunnel
 		c.OK(tunnel.ID)
@@ -59,7 +59,7 @@ func makeApi(api *gin.RouterGroup) {
 	tunnelApi := api.Group("/tunnels")
 
 	/** 设置缓存 */
-	tunnelApi.POST("/:tid/set_cache/:key", wrapTunnel(func(c *gw.Context, t *Tunnel) {
+	tunnelApi.POST("/:tid/set-cache/:key", wrapTunnel(func(c *gw.Context, t *Tunnel) {
 		key := c.C.Param("key")
 		var data interface{}
 		err := c.BindJSON(&data)
@@ -71,7 +71,7 @@ func makeApi(api *gin.RouterGroup) {
 	}))
 
 	/** 获取缓存 */
-	tunnelApi.POST("/:tid/get_cache", wrapTunnel(func(c *gw.Context, t *Tunnel) {
+	tunnelApi.POST("/:tid/get-cache", wrapTunnel(func(c *gw.Context, t *Tunnel) {
 		key := c.C.Param("key")
 		value := t.GetCache(key)
 		c.OK(value)
