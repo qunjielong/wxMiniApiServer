@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "typeRoots": ["typings/wx", "node_modules/@types"],
+    "strict": true,
+    "module": "commonjs",
+    "target": "es2015",
+    "outDir": "build"
+  },
+  "include": ["src/**/*.ts"]
+}
