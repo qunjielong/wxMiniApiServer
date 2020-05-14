@@ -89,7 +89,7 @@ func makeApi(api *gin.RouterGroup) {
 	}))
 
 	/** H5 送给小程序 */
-	tunnelApi.POST("/:tid/to-mini-app", wrapTunnel(func(c *gw.Context, t *Tunnel) {
+	tunnelApi.POST("/:tid/to-mini", wrapTunnel(func(c *gw.Context, t *Tunnel) {
 		var data interface{}
 		err := c.BindJSON(&data)
 		if err != nil {

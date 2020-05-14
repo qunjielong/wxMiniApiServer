@@ -1,9 +1,9 @@
 import {wxApis} from "../common/wxApis";
-import MiniSocket from "./MiniSocket";
+import Socket from "../common/Socket";
 
 declare const wx: any
 
-const socket = new MiniSocket();
+const socket = new Socket("mini");
 
 wxApis.forEach((api: string) => {
     socket.on(`wx.${api}`, async (param: any) => {
@@ -20,7 +20,7 @@ wxApis.forEach((api: string) => {
                     resolve(err)
                 },
             });
-            if (ret) {
+            if (ret !== undefined) {
                 isReturned = true
                 resolve(ret)
             }
