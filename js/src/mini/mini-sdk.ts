@@ -10,6 +10,7 @@ wxApis.forEach((api: string) => {
     socket.on(`wx.${api}`, async (param: any) => {
         return new Promise((resolve, reject) => {
             let isReturned = false
+            console.log("data....", param)
             const ret = wx[api]({
                 ...param,
                 success: (data: any) => {

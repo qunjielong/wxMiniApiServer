@@ -32,9 +32,10 @@ export default class Socket {
     public on<T = any>(event: string, callback: Callback<T>): void {
         console.log("listening...", event, "?")
         this.emitter.on(event, async (pack: Pack) => {
-            console.log("catch...", event)
+            console.log("catch...", event, pack)
             const ret = await callback(pack.data)
             if (ret === undefined) { return }
+            console.log("Sending ack", pack, pack.eventId)
             this.send({
                 name: pack.name,
                 eventId: pack.eventId,
@@ -49,6 +50,7 @@ export default class Socket {
         if (callback) {
             this.pendingEmitCallbacks.set(eventId, callback)
         }
+        console.log("Sending Event...", eventId)
         this.send({ name: event, eventId, data })
     }
 
@@ -126,8 +128,9 @@ export default class Socket {
             for (const ret of packs) {
                 if (!ret.ack) {
                     console.log("Emitting...", ret, ret.name)
-                    this.emitter.emit(ret.name, ret.data)
+                    this.emitter.emit(ret.name, ret)
                 } else {
+                    console.log("receive ack", ret.eventId, ret)
                     const callback = this.pendingEmitCallbacks.get(ret.eventId)
                     if (callback) {
                         callback(ret.data)
