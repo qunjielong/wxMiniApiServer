@@ -12,8 +12,8 @@ type Tunnel struct {
 	cache map[string]interface{}
 	toHostMessages *[]interface{}
 	toClientMessages *[]interface{}
-	toHostCtx *gw.Context
-	toClientCtx *gw.Context
+	toHostChan chan interface{}
+	toClientChan chan interface{}
 }
 
 func NewTunnel(msToDie time.Duration) *Tunnel {
@@ -41,27 +41,28 @@ func (tu *Tunnel) GetCache (key string) interface{}  {
 	}
 }
 
-func (tu *Tunnel) SetHostCtx(ctx *gw.Context)  {
-	tu.toHostCtx = ctx
+func (tu *Tunnel) SetHostChan(c chan interface{})  {
+	tu.toHostChan = c
 }
 
-func (tu *Tunnel) SetClientCtx(ctx *gw.Context)  {
-	tu.toClientCtx = ctx
+func (tu *Tunnel) SetClientChan(c chan interface{})  {
+	tu.toClientChan = c
 }
 
 func (tu *Tunnel) SendToClient(data interface{})  {
-	sendMessageTo(tu.toClientCtx, tu.toClientMessages, data)
-	tu.toClientCtx = nil
+	sendMessageTo(tu.toClientChan, tu.toClientMessages, data)
+	tu.toClientChan = nil
 }
 
 func (tu *Tunnel) SendToHost(data interface{})  {
-	sendMessageTo(tu.toHostCtx, tu.toHostMessages, data)
-	tu.toHostCtx = nil
+	sendMessageTo(tu.toHostChan, tu.toHostMessages, data)
+	tu.toHostChan = nil
 }
 
-func sendMessageTo(ctx *gw.Context, msgs *[]interface{}, data interface{})  {
+func sendMessageTo(c chan interface{}, msgs *[]interface{}, data interface{})  {
 	*msgs = append(*msgs, data)
-	if ctx != nil {
-		ctx.OK(msgs)
+	if c != nil && len(*msgs) > 0 {
+		c <- *msgs
+		*msgs = []interface{}{}
 	}
 }

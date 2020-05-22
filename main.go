@@ -21,12 +21,7 @@ func trackDyingTunnels() {
 	time.AfterFunc(5 * time.Second, func() {
 		for k, t := range tunnels {
 			if t.IsDead {
-				if t.toHostCtx != nil {
-					t.toHostCtx.BadRequest("Timeout")
-				}
-				if t.toClientCtx != nil {
-					t.toClientCtx.BadRequest("Timeout")
-				}
+				log.Println("Dead -> ", t)
 				delete(tunnels, k)
 			}
 		}
@@ -102,12 +97,28 @@ func makeApi(api *gin.RouterGroup) {
 	/** 长轮训 */
 	tunnelApi.POST("/:tid/long-pull/:clientType", wrapTunnel(func(c *gw.Context, t *Tunnel) {
 		clientType := c.C.Param("clientType")
+
+		s := make(chan interface{})
+
 		if clientType == "mini" {
-			t.SetHostCtx(c)
+			t.SetHostChan(s)
 		} else if clientType == "h5" {
-			t.SetClientCtx(c)
+			t.SetClientChan(s)
 		} else {
 			c.BadRequest("不存在的长轮训类型 " + clientType)
+			return
+		}
+
+		time.AfterFunc(10 * time.Second, func() {
+			s <- []string{}
+		})
+
+		select {
+		case st := <-s:
+			if !c.C.Writer.Written() {
+				log.Println("Sending....", st)
+				c.OK(st)
+			}
 		}
 	}))
 

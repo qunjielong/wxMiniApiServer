@@ -4,6 +4,7 @@ import Socket from "../common/Socket";
 declare const wx: any
 
 const socket = new Socket("mini");
+socket.connect()
 
 wxApis.forEach((api: string) => {
     socket.on(`wx.${api}`, async (param: any) => {
