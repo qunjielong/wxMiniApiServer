@@ -6,8 +6,13 @@ let host = wxApiHost
 
 declare var wx: any;
 
-export type Callback<T> = (data: T) => void
-export type Pack = { eventId: string, name: string, ack?: boolean, data: any }
+export type Callback<T> = (data: T, eventId?: string) => void
+export type Pack = {
+    eventId: string,
+    name: string,
+    ack?: boolean,
+    data?: any,
+}
 const tidUrl = curry((tid: string, url: string) => `${host}/api/tunnels/${tid}${url}`)
 
 export default class Socket {
@@ -33,7 +38,7 @@ export default class Socket {
         console.log("listening...", event, "?")
         this.emitter.on(event, async (pack: Pack) => {
             console.log("catch...", event, pack)
-            const ret = await callback(pack.data)
+            const ret = await callback(pack.data, pack.eventId)
             if (ret === undefined) { return }
             console.log("Sending ack", pack, pack.eventId)
             this.send({
@@ -45,13 +50,14 @@ export default class Socket {
         })
     }
 
-    public emit<T = any>(event: string, data: any, callback?: Callback<T>) {
+    public emit<T = any>(event: string, data: any, callback?: Callback<T>): string {
         const eventId = String(this.eventId++)
         if (callback) {
             this.pendingEmitCallbacks.set(eventId, callback)
         }
         console.log("Sending Event...", eventId)
         this.send({ name: event, eventId, data })
+        return eventId
     }
 
     public async connect() {

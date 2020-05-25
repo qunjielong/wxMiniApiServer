@@ -1,6 +1,7 @@
 export const wxApis = [
     "showLoading",
     "hideLoading",
+    "showModal",
 ]
 
 export const wxApiHost = "http://localhost:8080"
