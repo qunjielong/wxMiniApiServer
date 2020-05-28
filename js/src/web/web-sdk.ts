@@ -23,16 +23,21 @@ window.addEventListener("load", () => {
     const wxApisObj: any = {}
     const callbacks: any = {}
     wxApis.forEach((wxName: string) => {
-        wxApisObj[wxName] = (param: any) => {
-            console.log("calling...", wxName, param)
-            const { data, methods, methodIds } = extractDataMethods(param)
-            console.log(data, methods, methodIds)
-            const eventId = socket.emit(`wx.${wxName}`, { data, methodIds }, (data) => {
-                if (param.success) {
-                    param.success(data)
-                }
-            })
-            callbacks[eventId] = methods
+        wxApisObj[wxName] = (...params: any) => {
+            console.log("calling...", wxName, params)
+            if (params.length === 1) {
+                const param = params[0]
+                const {data, methods, methodIds} = extractDataMethods(param)
+                console.log(data, methods, methodIds)
+                const eventId = socket.emit(`wx.${wxName}`, {data, methodIds}, (data) => {
+                    if (param.success) {
+                        param.success(data)
+                    }
+                })
+                callbacks[eventId] = methods
+            } else {
+                socket.emit(`wx.${wxName}`, { data: params })
+            }
         }
     });
 

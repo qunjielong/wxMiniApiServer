@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/gofrs/uuid"
 	gw "go-web-utilities"
+	"log"
 	"time"
 )
 
@@ -41,12 +42,23 @@ func (tu *Tunnel) GetCache (key string) interface{}  {
 	}
 }
 
-func (tu *Tunnel) SetHostChan(c chan interface{})  {
+func (tu *Tunnel) SetHostChan(c chan interface{}) {
 	tu.toHostChan = c
+	if len(*tu.toHostMessages) == 0 { return }
+	log.Println("Flush host data...", *tu.toHostMessages)
+	tu.toHostChan <- *tu.toHostMessages
+	*tu.toHostMessages = []interface{}{}
+	tu.toHostChan = nil
+	log.Println("After flush....", *tu.toHostMessages)
 }
 
 func (tu *Tunnel) SetClientChan(c chan interface{})  {
 	tu.toClientChan = c
+	if len(*tu.toClientMessages) == 0 { return }
+	log.Println("Flush client data...")
+	tu.toClientChan <- *tu.toClientMessages
+	*tu.toClientMessages = []interface{}{}
+	tu.toClientChan = nil
 }
 
 func (tu *Tunnel) SendToClient(data interface{})  {
@@ -61,6 +73,7 @@ func (tu *Tunnel) SendToHost(data interface{})  {
 
 func sendMessageTo(c chan interface{}, msgs *[]interface{}, data interface{})  {
 	*msgs = append(*msgs, data)
+	log.Println("To Send Message...", msgs, c)
 	if c != nil && len(*msgs) > 0 {
 		c <- *msgs
 		*msgs = []interface{}{}

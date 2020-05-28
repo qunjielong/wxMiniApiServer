@@ -1,7 +1,8 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
+
+"github.com/gin-gonic/gin"
 	gw "go-web-utilities"
 	"log"
 	"time"
@@ -14,6 +15,20 @@ func main() {
 	err := app.Run(":8080")
 	if err != nil {
 		log.Println(err)
+	}
+}
+
+func initk()  {
+	for i := 0; i < 10000; i++ {
+		s := make(chan interface{})
+		go func() {
+			log.Println("Ready to send ---->")
+			s <- 1
+		}()
+		select {
+		case st := <- s:
+			log.Println("OJBK", st)
+		}
 	}
 }
 
@@ -100,24 +115,30 @@ func makeApi(api *gin.RouterGroup) {
 
 		s := make(chan interface{})
 
+		time.AfterFunc(10 * time.Second, func() {
+			if !c.C.Writer.Written() {
+				s <- []string{}
+			}
+		})
+
 		if clientType == "mini" {
-			t.SetHostChan(s)
+			go t.SetHostChan(s)
 		} else if clientType == "h5" {
-			t.SetClientChan(s)
+			go t.SetClientChan(s)
 		} else {
 			c.BadRequest("不存在的长轮训类型 " + clientType)
 			return
 		}
 
-		time.AfterFunc(10 * time.Second, func() {
-			s <- []string{}
-		})
-
-		select {
-		case st := <-s:
-			if !c.C.Writer.Written() {
-				log.Println("Sending....", st)
-				c.OK(st)
+		if !c.C.Writer.Written() {
+			select {
+			case st := <-s:
+				if !c.C.Writer.Written() {
+					log.Println("Sending....", st)
+					c.OK(st)
+				} else {
+					log.Println("Header is written.")
+				}
 			}
 		}
 	}))

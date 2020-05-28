@@ -133,7 +133,6 @@ export default class Socket {
             console.log(packs)
             for (const ret of packs) {
                 if (!ret.ack) {
-                    console.log("Emitting...", ret, ret.name)
                     this.emitter.emit(ret.name, ret)
                 } else {
                     console.log("receive ack", ret.eventId, ret)
