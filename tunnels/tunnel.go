@@ -1,4 +1,4 @@
-package main
+package tunnels
 
 import (
 	"github.com/gofrs/uuid"

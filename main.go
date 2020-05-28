@@ -6,6 +6,7 @@ import (
 	gw "go-web-utilities"
 	"log"
 	"time"
+	"wxMiniApiServer/tunnels"
 )
 
 func main() {
@@ -34,24 +35,24 @@ func initk()  {
 
 func trackDyingTunnels() {
 	time.AfterFunc(5 * time.Second, func() {
-		for k, t := range tunnels {
+		for k, t := range allTunnel {
 			if t.IsDead {
 				log.Println("Dead -> ", t)
-				delete(tunnels, k)
+				delete(allTunnel, k)
 			}
 		}
 		trackDyingTunnels()
 	})
 }
 
-var tunnels = map[string]*Tunnel{}
+var allTunnel = map[string]*tunnels.Tunnel{}
 
-type TunnelParamHandler func(c *gw.Context, t *Tunnel)
+type TunnelParamHandler func(c *gw.Context, t *tunnels.Tunnel)
 
 func wrapTunnel(handler TunnelParamHandler) gin.HandlerFunc {
 	return gw.Rest(func(c *gw.Context) {
 		tid := c.C.Param("tid")
-		if t, ok := tunnels[tid]; ok {
+		if t, ok := allTunnel[tid]; ok {
 			handler(c, t)
 		} else {
 			c.BadRequest("通信通道不存在或者已经销毁")
@@ -61,15 +62,15 @@ func wrapTunnel(handler TunnelParamHandler) gin.HandlerFunc {
 
 func makeApi(api *gin.RouterGroup) {
 	api.POST("/apply-token", gw.Rest(func(c *gw.Context) {
-		tunnel := NewTunnel(time.Second * 5)
-		tunnels[tunnel.ID] = tunnel
+		tunnel := tunnels.NewTunnel(time.Second * 5)
+		allTunnel[tunnel.ID] = tunnel
 		c.OK(tunnel.ID)
 	}))
 
-	tunnelApi := api.Group("/tunnels")
+	tunnelApi := api.Group("/allTunnel")
 
 	/** 设置缓存 */
-	tunnelApi.POST("/:tid/set-cache/:key", wrapTunnel(func(c *gw.Context, t *Tunnel) {
+	tunnelApi.POST("/:tid/set-cache/:key", wrapTunnel(func(c *gw.Context, t *tunnels.Tunnel) {
 		key := c.C.Param("key")
 		var data interface{}
 		err := c.BindJSON(&data)
@@ -81,14 +82,14 @@ func makeApi(api *gin.RouterGroup) {
 	}))
 
 	/** 获取缓存 */
-	tunnelApi.POST("/:tid/get-cache", wrapTunnel(func(c *gw.Context, t *Tunnel) {
+	tunnelApi.POST("/:tid/get-cache", wrapTunnel(func(c *gw.Context, t *tunnels.Tunnel) {
 		key := c.C.Param("key")
 		value := t.GetCache(key)
 		c.OK(value)
 	}))
 
 	/** 小程序发送给 H5 */
-	tunnelApi.POST("/:tid/to-h5", wrapTunnel(func(c *gw.Context, t *Tunnel) {
+	tunnelApi.POST("/:tid/to-h5", wrapTunnel(func(c *gw.Context, t *tunnels.Tunnel) {
 		var data interface{}
 		err := c.BindJSON(&data)
 		if err != nil {
@@ -99,7 +100,7 @@ func makeApi(api *gin.RouterGroup) {
 	}))
 
 	/** H5 送给小程序 */
-	tunnelApi.POST("/:tid/to-mini", wrapTunnel(func(c *gw.Context, t *Tunnel) {
+	tunnelApi.POST("/:tid/to-mini", wrapTunnel(func(c *gw.Context, t *tunnels.Tunnel) {
 		var data interface{}
 		err := c.BindJSON(&data)
 		if err != nil {
@@ -110,7 +111,7 @@ func makeApi(api *gin.RouterGroup) {
 	}))
 
 	/** 长轮训 */
-	tunnelApi.POST("/:tid/long-pull/:clientType", wrapTunnel(func(c *gw.Context, t *Tunnel) {
+	tunnelApi.POST("/:tid/long-pull/:clientType", wrapTunnel(func(c *gw.Context, t *tunnels.Tunnel) {
 		clientType := c.C.Param("clientType")
 
 		s := make(chan interface{})
@@ -144,7 +145,7 @@ func makeApi(api *gin.RouterGroup) {
 	}))
 
 	/** 小程序心跳控制 */
-	tunnelApi.POST("/:tid/heart-beat", wrapTunnel(func(c *gw.Context, t *Tunnel) {
+	tunnelApi.POST("/:tid/heart-beat", wrapTunnel(func(c *gw.Context, t *tunnels.Tunnel) {
 		t.Beat()
 	}))
 }
