@@ -17,43 +17,44 @@ const extractDataMethods = (data: any): { data: any, methodIds: string[], method
     return { data: obj, methodIds, methods }
 }
 
-window.addEventListener("load", () => {
-    const socket = new Socket("h5");
-    const global = window as any
-    const wxApisObj: any = {}
-    const callbacks: any = {}
-    wxApis.forEach((wxName: string) => {
-        wxApisObj[wxName] = (...params: any) => {
-            console.log("calling...", wxName, params)
-            if (params.length === 1) {
-                const param = params[0]
-                const {data, methods, methodIds} = extractDataMethods(param)
-                console.log(data, methods, methodIds)
-                const eventId = socket.emit(`wx.${wxName}`, {data, methodIds}, (data) => {
-                    if (param.success) {
-                        param.success(data)
-                    }
-                })
-                callbacks[eventId] = methods
-            } else {
-                socket.emit(`wx.${wxName}`, { data: params })
-            }
-        }
-    });
-
-    socket.on("api-cb", function ({ eventId, methodId, data }) {
-        const method = callbacks?.[eventId]?.[methodId]
-        if (!method) {
-            console.warn("API 回调函数未找到: ", eventId, methodId)
+const socket = new Socket("h5");
+const global = window as any
+const wxApisObj: any = {}
+const callbacks: any = {}
+wxApis.forEach((wxName: string) => {
+    wxApisObj[wxName] = (...params: any) => {
+        console.log("calling...", wxName, params)
+        if (params.length === 1) {
+            const param = params[0]
+            const {data, methods, methodIds} = extractDataMethods(param)
+            console.log(data, methods, methodIds)
+            const eventId = socket.emit(`wx.${wxName}`, {data, methodIds}, (data) => {
+                if (param.success) {
+                    param.success(data)
+                }
+            })
+            callbacks[eventId] = methods
         } else {
-            method(data)
-            delete callbacks[eventId][methodId]
-            if (Object.keys(callbacks[eventId]).length === 0) {
-                delete callbacks[eventId]
-            }
+            socket.emit(`wx.${wxName}`, { data: params })
         }
-    })
+    }
+});
 
-    global.wx = Object.assign(global.wx || {}, wxApisObj)
+socket.on("api-cb", function ({ eventId, methodId, data }) {
+    const method = callbacks?.[eventId]?.[methodId]
+    if (!method) {
+        console.warn("API 回调函数未找到: ", eventId, methodId)
+    } else {
+        method(data)
+        delete callbacks[eventId][methodId]
+        if (Object.keys(callbacks[eventId]).length === 0) {
+            delete callbacks[eventId]
+        }
+    }
+})
+
+global.wx = Object.assign(global.wx || {}, wxApisObj)
+
+window.addEventListener("load", () => {
     socket.connect()
 });
